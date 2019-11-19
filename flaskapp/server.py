@@ -1,4 +1,6 @@
 from flask import Flask
+from flask import json
+
 app = Flask(__name__)
 
 @app.route('/', methods=['GET'])
@@ -8,7 +10,7 @@ def display():
 @app.route('/show=<show>', methods=['POST', 'GET'])
 def addShow(show):
     print(show)
-    return show
+    return jsonify([show])
 
 if __name__=='__main__':
     app.run(host="0.0.0.0", port="80")
