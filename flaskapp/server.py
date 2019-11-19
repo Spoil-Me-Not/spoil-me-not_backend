@@ -14,8 +14,6 @@ from os import path
 import numpy as np
 import pandas as pd
 
-from nltk.corpus import stopwords
-stop_words = stopwords.words('english')
 app = Flask(__name__)
 #app.run(debug=True)
 
