@@ -1,5 +1,12 @@
 from flask import Flask
 from flask import jsonify
+for selenium import webdriver
+
+from selenium import webdriver
+driver = webdriver.Chrome()
+website = "https://www.imdb.com"
+driver.get(website)
+driver.close()
 
 app = Flask(__name__)
 
