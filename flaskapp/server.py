@@ -5,7 +5,7 @@ app = Flask(__name__)
 def display():
     return "Looks like it works!"
 
-@app.route('/show=<show>', methods=['POST'])
+@app.route('/show=<show>', methods=['POST', 'GET'])
 def addShow(show):
     print(show)
     return show
