@@ -1,6 +1,5 @@
 from flask import Flask
 from flask import jsonify
-for selenium import webdriver
 
 from selenium import webdriver
 driver = webdriver.Chrome()
