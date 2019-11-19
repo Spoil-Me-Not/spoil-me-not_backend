@@ -5,7 +5,6 @@ from selenium import webdriver
 driver = webdriver.Firefox()
 website = "https://www.imdb.com"
 driver.get(website)
-driver.close()
 
 app = Flask(__name__)
 
