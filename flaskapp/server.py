@@ -2,7 +2,7 @@ from flask import Flask
 from flask import jsonify
 
 from selenium import webdriver
-driver = webdriver.Chrome()
+driver = webdriver.Firefox()
 website = "https://www.imdb.com"
 driver.get(website)
 driver.close()
