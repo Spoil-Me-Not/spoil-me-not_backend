@@ -5,5 +5,10 @@ app = Flask(__name__)
 def display():
     return "Looks like it works!"
 
+@app.route('/show=<show>' methods=['POST'])
+def addShow(show):
+    print(show)
+    return show
+
 if __name__=='__main__':
     app.run(host="0.0.0.0", port="80")
