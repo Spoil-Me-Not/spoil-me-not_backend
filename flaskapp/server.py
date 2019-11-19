@@ -10,7 +10,7 @@ def display():
 @app.route('/show=<show>', methods=['POST', 'GET'])
 def addShow(show):
     print(show)
-    return jsonify([show, "here", "lol")
+    return jsonify([show, "here", "lol"])
 
 if __name__=='__main__':
     app.run(host="0.0.0.0", port="80")
