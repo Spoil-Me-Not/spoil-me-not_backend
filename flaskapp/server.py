@@ -1,6 +1,8 @@
 from flask import Flask
 from flask import jsonify
 from bs4 import BeautifulSoup
+import json
+import sys
 import requests
 import re
 import nltk
@@ -31,81 +33,103 @@ class WebScraper:
         self.stemmer = nltk.stem.SnowballStemmer('english')
         self.content = None
         print("started")
-        
+
+
+    def clear_dictionary(self):
+        script_dir = os.path.dirname(__file__) 
+        os.remove(os.path.join(script_dir, "dict.txt"))
+         
     def model(self):
+        content = None
+        script_dir = os.path.dirname(__file__) 
+        if path.exists(os.path.join(script_dir, "dict.txt")):
+            self.shows = json.load(open("dict.txt"))
         if self.show_url in self.shows:
             print("found the show!")
             return self.shows[self.show_url]
+        with open(os.path.join(script_dir, "stemmed_words.txt"), "r") as f:
+            content = f.readlines()[0].split()
         txt = self.summary
         txt = (re.split(r'\W+', txt))
         txt = " ".join([self.stemmer.stem(word) for word in txt])
         vect = TfidfVectorizer(stop_words = 'english')
-        tfidf_matrix = vect.fit_transform([txt, " ".join([word for word in self.content])])
+        tfidf_matrix = vect.fit_transform([txt, " ".join([word for word in content])])
         df = pd.DataFrame(tfidf_matrix.toarray(), columns=vect.get_feature_names())
         cp = df.iloc[0].sort_values(inplace=False, ascending=False)
-        self.cp = cp
         self.shows[self.show_url] = list(cp[0:10].keys())
+        json.dump(self.shows, open("dict.txt", "w"))
+        self.shows = None
         return list(cp[0:10].keys())
         
     def get_list(self):
         return self.cp
 
     def scrape(self, show):
-        options = Options()
-        self.show = show
-        options.headless = True
-        driver = webdriver.Firefox(options=options)
-        website = "https://www.imdb.com"
-        driver.get(website)
-        search = driver.find_element_by_name("q")
-        search.send_keys(show)
-        search_button = driver.find_element_by_id('navbar-submit-button')
+        try:
+            options = Options()
+            self.show = show
+            options.headless = True
+            driver = webdriver.Firefox(options=options)
+            website = "https://www.imdb.com"
+            driver.get(website)
+            search = driver.find_element_by_name("q")
+            search.send_keys(show)
+            search_button = driver.find_element_by_id('navbar-submit-button')
 
-        search_button.click()
+            search_button.click()
+            #we just seached now we will find the show
+            result = requests.get(driver.current_url)
+            soup = BeautifulSoup(result.content)
+            webpage = (soup.find_all('table', class_='findList'))
+            element = webpage[0].findChildren("a",recursive=True)
+            new_page = element[0]['href']
+            driver.get(website + new_page)
+            self.show_url = website+ new_page
+            #NOW WE ARE ON THE CURRENT SHOWS PAGE. LEAVE THIS HERE IN CASE WE WANT THE SYNOPSIS OF THE WHOLE SHOW
+            result = requests.get(driver.current_url)
+            soup = BeautifulSoup(result.content)
+            summary_block = soup.find(id ="titleStoryLine")
+            show_summary = summary_block.findChildren("p", recursive=True)[0].text
+            #now we will find a show synopsis if it exists
+            for child in summary_block.findChildren("a", recursive=True):
+                if child.text == "Plot Synopsis":
+                    driver.get(website + child['href'])
+                    result = requests.get(driver.current_url)
+                    soup = BeautifulSoup(result.content)
+                    item = soup.find(id="plot-synopsis-content")
+                    show_summary = item.text
+            #NOW WE ARE GOING TO GO TO THE EPISODE GUIDE AND GET TEH LAST EPISODE
+            driver.get(website + new_page + "episodes")
+            result = requests.get(website + new_page + "episodes")
+            soup = BeautifulSoup(result.content)
+            episode_scrape = soup.find_all('div', class_="ipl-rating-widget")
+            most_recent_episode = episode_scrape[-1].parent
+            links = most_recent_episode.findChildren("a", recursive=True)
+            new_link = links[0]['href']
+            driver.get(website+new_link)
 
-        result = requests.get(driver.current_url)
-        soup = BeautifulSoup(result.content)
-        po = (soup.find_all('table', class_='findList'))
-        l = po[0].findChildren("a",recursive=True)
-        new_page = l[0]['href']
-        driver.get(website + new_page)
-        #NOW WE ARE ON THE CURRENT SHOWS PAGE. LEAVE THIS HERE IN CASE WE WANT THE SYNOPSIS OF THE WHOLE SHOW
-        result = requests.get(driver.current_url)
-        soup = BeautifulSoup(result.content)
-        po = (soup.find_all('a', class_='bp_item np_episode_guide np_right_arrow'))
-        for l in po:
-            k = l
-        #NOW WE ARE GOING TO GO TO THE EPISODE GUIDE AND GET TEH LAST EPISODE
-        driver.get(website + new_page + "episodes")
-        self.show_url = website+ new_page
-        result = requests.get(website + new_page + "episodes")
-        soup = BeautifulSoup(result.content)
-        episode_scrape = soup.find_all('div', class_="ipl-rating-widget")
-        most_recent_episode = episode_scrape[-1].parent
-        links = most_recent_episode.findChildren("a", recursive=True)
-        new_link = links[0]['href']
-        driver.get(website+new_link)
+            # we should gather both the summary and the plot synopsis IF IT SAYS 'PLOT SYNOPSIS' AND NOT 'ADD SYNOPSIS'
+            #Plot storyline item
+            result = requests.get(driver.current_url)
+            soup = BeautifulSoup(result.content)
+            synopsis = None
+            item = (soup.find(id= 'titleStoryLine'))
+            summary = item.findChildren("span", recursive=True)[1].text
+            for anchor in item.findChildren("a", recursive=True):
+                if anchor.text == "Plot Synopsis":
+                    driver.get(website + anchor['href'])
+                    result = requests.get(driver.current_url)
+                    soup = BeautifulSoup(result.content)
+                    item = soup.find(id="plot-synopsis-content")
+                    synopsis = item.text
 
-        # we should gather both the summary and the plot synopsis IF IT SAYS 'PLOT SYNOPSIS' AND NOT 'ADD SYNOPSIS'
-        #Plot storyline item
-        result = requests.get(driver.current_url)
-        soup = BeautifulSoup(result.content)
-        synopsis = None
-        item = (soup.find(id= 'titleStoryLine'))
-        summary = item.findChildren("span", recursive=True)[1].text
-        for anchor in item.findChildren("a", recursive=True):
-            if anchor.text == "Plot Synopsis":
-                driver.get(website + anchor['href'])
-                result = requests.get(driver.current_url)
-                soup = BeautifulSoup(result.content)
-                item = soup.find(id="plot-synopsis-content")
-                synopsis = item.text
-
-        #this is the summary text
-        if synopsis is not None:
-            summary = synopsis
-        self.summary = summary
-        print(self.summary)
+            #this is the summary text
+            if synopsis is not None:
+                summary = synopsis
+            self.summary = " ".join([show_summary , summary])
+            print(self.summary)
+        except IndexError:
+            raise Exception("The correct tv show was not found. Try revising your search or adding tv at the end.")
 
     def get_summary(self):
         return self.summary
@@ -133,13 +157,11 @@ class WebScraper:
             print("done regexing")
             content = " ".join([self.stemmer.stem(word) for word in content])
             self.content = content
-            print(len(self.content))
+
     def get_content(self):
         return self.content
 
 
-scraper = None
-this_show = None
 @app.route('/', methods=["GET"])
 def test():
     return "Looks like it works!"
@@ -156,18 +178,20 @@ def display():
 
 @app.route('/show=<show>', methods=['POST', 'GET'])
 def addShow(show):
-    print(show)
-    scraper.scrape(show)
-    words = scraper.model()
-    return words
+    try:
+        scraper.scrape(show)
+        words = scraper.model()
+        return words
+    except Exception as err:
+        return err
 
 @app.route('/look', methods=['GET'])
 def look():
     return scraper.get_list()
 
-@app.route('/debug', methods=['GET'])
-def debug():
-    return scraper.get_content()
+@app.route('/refresh_cache', methods=['GET'])
+def refreshCache():
+    scraper.clear_dictionary()
 
 if __name__=='__main__':
     scraper = WebScraper()
