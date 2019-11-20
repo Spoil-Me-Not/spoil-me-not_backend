@@ -118,9 +118,8 @@ class WebScraper:
             with open(os.path.join(script_dir, "stemmed_words.txt"), "r") as f:
                 content = f.readlines()[0].split()
                 #content is now an array of individual words
-                print(len(content))
-                print(content[5])
                 self.content = content 
+                print(len(self.content))
                 return
         else:
             print("file doesn't exist!")
@@ -164,6 +163,10 @@ def addShow(show):
 @app.route('/look', methods=['GET'])
 def look():
     return scraper.get_list()
+
+@app.route('/debug', methods=['GET'])
+def debug():
+    return scraper.get_content()
 
 if __name__=='__main__':
     app.run(host="0.0.0.0", port="80")
