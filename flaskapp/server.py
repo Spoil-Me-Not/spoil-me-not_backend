@@ -60,9 +60,6 @@ class WebScraper:
         json.dump(self.shows, open("dict.txt", "w"))
         self.shows = None
         return list(cp[0:10].keys())
-        
-    def get_list(self):
-        return self.cp
 
     def scrape(self, show):
         try:
@@ -184,10 +181,6 @@ def addShow(show):
         return words
     except Exception as err:
         return err
-
-@app.route('/look', methods=['GET'])
-def look():
-    return scraper.get_list()
 
 @app.route('/refresh_cache', methods=['GET'])
 def refreshCache():
