@@ -29,6 +29,7 @@ class WebScraper:
     def __init__(self):
         self.shows = {}
         self.stemmer = nltk.stem.SnowballStemmer('english')
+        self.content = None
         print("started")
         
     def model(self):
@@ -131,13 +132,13 @@ class WebScraper:
             content = (re.split(r'\W+', content))
             print("done regexing")
             content = " ".join([self.stemmer.stem(word) for word in content])
-            print(len(content))
             self.content = content
+            print(len(self.content))
     def get_content(self):
         return self.content
 
 
-scraper = WebScraper()
+scraper = None
 this_show = None
 @app.route('/', methods=["GET"])
 def test():
@@ -169,4 +170,5 @@ def debug():
     return scraper.get_content()
 
 if __name__=='__main__':
+    scraper = WebScraper()
     app.run(host="0.0.0.0", port="80")
