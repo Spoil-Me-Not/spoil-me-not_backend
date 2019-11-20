@@ -134,6 +134,8 @@ class WebScraper:
             content = " ".join([self.stemmer.stem(word) for word in content])
             print(len(content))
             self.content = content
+    def get_content(self):
+        return self.content
 
 
 scraper = WebScraper()
