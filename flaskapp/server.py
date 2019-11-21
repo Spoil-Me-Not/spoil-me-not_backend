@@ -61,11 +61,11 @@ class WebScraper:
         df = pd.DataFrame(tfidf_matrix.toarray(), columns=vect.get_feature_names())
         print("gathering info")
         cp = df.iloc[0].sort_values(inplace=False, ascending=False)
-        self.shows[self.show_url] = list(cp[0:10].keys())
+        self.shows[self.show_url] = list(cp[0:30].keys())
         print("dumping file")
         json.dump(self.shows, open(os.path.join(script_dir,"dict.txt"), "w"))
         self.shows = None
-        return list(cp[0:10].keys())
+        return list(cp[0:30].keys())
 
     def scrape(self, show):
         try:
